@@ -2,11 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DiaristaRequest;
 use App\Models\Diarista;
+use App\Services\ViaCEP;
 use Illuminate\Http\Request;
 
 class DiaristaController extends Controller
 {
+    protected ViaCEP $viaCEP;
+    public function __construct (
+        ViaCEP $viaCEP
+
+    ){
+        $this->viaCEP = $viaCEP;
+    }
 
      /**
      * Lista as diaristas
@@ -41,16 +50,17 @@ class DiaristaController extends Controller
      * @return void
      */
 
-    public function store(Request $request)
+    public function store(DiaristaRequest $request)
     {
        // dd($request->all());
        $dados = $request->except('_token');
        $dados['foto_usuario'] = $request->foto_usuario->store('public');
+
        $dados['cpf'] = str_replace(['.', '-'], '', $dados['cpf']);
        $dados['cep'] = str_replace('-', '', $dados['cep']);
        $dados['telefone'] = str_replace(['(', ')', ' ', '-'], '', $dados['telefone']);
-       $dados['codigo_ibge'] = $this->viaCep->buscar($dados['cep'])['ibge'];
 
+       $dados['codigo_ibge'] = $this->viaCEP->buscar($dados['cep'])['ibge'];
        Diarista::create($dados);
 
        return redirect()->route('diaristas.index');
@@ -83,7 +93,7 @@ class DiaristaController extends Controller
      * @return void
      */
 
-    public function update(int $id, Request $request)
+    public function update(int $id, DiaristaRequest $request)
     {
         $diarista = Diarista::findOrFail($id);
 
@@ -92,7 +102,8 @@ class DiaristaController extends Controller
        $dados['cpf'] = str_replace(['.', '-'], '', $dados['cpf']);
         $dados['cep'] = str_replace('-', '', $dados['cep']);
         $dados['telefone'] = str_replace(['(', ')', ' ', '-'], '', $dados['telefone']);
-        $dados['codigo_ibge'] = $this->viaCep->buscar($dados['cep'])['ibge'];
+
+         $dados['codigo_ibge'] = $this->viaCEP->buscar($dados['cep'])['ibge'];
 
         if ($request->hasFile('foto_usuario')) {
             $dados['foto_usuario'] = $request->foto_usuario->store('public');
@@ -109,7 +120,7 @@ class DiaristaController extends Controller
      * @param integer $id
      * @return void
      */
-    
+
     public function destroy(int $id)
     {
         $diarista = Diarista::findOrFail($id);
